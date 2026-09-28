@@ -16,3 +16,4 @@ Packetry Documentation
   :caption: Quick Start
 
   quick_start
+  command_line_capture

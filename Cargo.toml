@@ -66,6 +66,7 @@ async-trait = "0.1.89"
 portable_async_sleep = { version = "0.1.1", default-features = false }
 async-lock = "3.4.1"
 thiserror = "2.0.19"
+ctrlc = { version = "3.5.2", features = ["termination"] }
 
 [dev-dependencies]
 serde_json = "1.0.113"
@@ -156,6 +157,10 @@ path = "src/main.rs"
 [[bin]]
 name = "packetry-cli"
 path = "src/cli.rs"
+
+[[bin]]
+name = "packetry-capture"
+path = "src/headless.rs"
 
 [[example]]
 name = "fuzzer"

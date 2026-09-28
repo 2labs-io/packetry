@@ -468,6 +468,21 @@ fn stats_options(meta: &CaptureMetadata)
     opt
 }
 
+impl<Dest: Write> PcapNgSaver<Dest> {
+    /// Update the metadata written by `close`.
+    ///
+    /// The section header and interface description are written when the
+    /// saver is created, so only the interface statistics (end time, dropped
+    /// packets) can still change. This lets a capture be streamed to a file
+    /// as it happens, and its end time recorded once it is known.
+    ///
+    /// Used only by packetry-capture.
+    #[allow(dead_code)]
+    pub fn update_metadata(&mut self, meta: Arc<CaptureMetadata>) {
+        self.meta = meta;
+    }
+}
+
 impl<Dest> GenericSaver<Dest>
 for PcapNgSaver<Dest>
 where Self: Sized, Dest: Write
