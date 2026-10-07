@@ -10,6 +10,7 @@ use std::sync::{mpsc, Arc};
 use anyhow::{Context as ErrorContext, Error, bail};
 use async_lock::Mutex;
 use async_trait::async_trait;
+use portable_async_sleep::async_sleep;
 use nusb::{
     self,
     transfer::{
@@ -46,6 +47,7 @@ const PROTOCOL: u8 = 0x01;
 const ENDPOINT: u8 = 0x81;
 const READ_LEN: usize = 0x4000;
 const NUM_TRANSFERS: usize = 4;
+const STOP_ATTEMPTS: u32 = 3;
 
 bitfield! {
     #[derive(Copy, Clone)]
@@ -388,7 +390,21 @@ impl CynthionInner {
             self.state.set_target_a_discharge(true);
             power.on_now = false;
         }
-        self.write_request(1, self.state.0).await
+        // Under traffic the gateware sometimes accepts this request but fails
+        // to answer its status stage (cynthion#258), so the host reports an
+        // error although the capture has stopped. The request only writes the
+        // state register, so repeating it is harmless.
+        let mut attempts = 1;
+        loop {
+            match self.write_request(1, self.state.0).await {
+                Err(error) if attempts < STOP_ATTEMPTS => {
+                    println!("Stop request failed, retrying: {error:#}");
+                    attempts += 1;
+                    async_sleep(Duration::from_millis(20)).await;
+                }
+                result => return result,
+            }
+        }
     }
 
     async fn set_power_config(&mut self, power: PowerConfig)
